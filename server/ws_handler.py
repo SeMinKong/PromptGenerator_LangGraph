@@ -9,13 +9,20 @@ class ServerMessage:
     node: str | None = None
     content: str | None = None
     message: str | None = None
+    revision: int | None = None
+    max_revisions: int | None = None
 
     def to_json(self) -> str:
         return json.dumps({k: v for k, v in asdict(self).items() if v is not None})
 
 
-def make_node_start(node: str) -> str:
-    return ServerMessage(type="node_start", node=node).to_json()
+def make_node_start(node: str, revision: int = 0, max_revisions: int = 3) -> str:
+    return ServerMessage(
+        type="node_start",
+        node=node,
+        revision=revision if revision > 0 else None,
+        max_revisions=max_revisions if revision > 0 else None,
+    ).to_json()
 
 
 def make_node_end(node: str) -> str:

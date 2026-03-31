@@ -40,17 +40,26 @@ async def run_graph(state: PromptState, send: SendFn) -> PromptState:
     thread.start()
 
     updated_state = dict(state)
+    prev_node: str | None = None
 
     while True:
         item = await queue.get()
         if item is _SENTINEL:
+            if prev_node:
+                await send(make_node_end(prev_node))
             break
 
         node_name, node_state = next(iter(item.items()))
 
-        await send(make_node_start(node_name))
+        # Mark previous node done only when the next node's output arrives,
+        # so the UI always shows an active node while the LLM is running.
+        if prev_node:
+            await send(make_node_end(prev_node))
+
         updated_state = {**updated_state, **node_state}
-        await send(make_node_end(node_name))
+        revision = updated_state.get("revision_count", 0)
+        await send(make_node_start(node_name, revision=revision))
+        prev_node = node_name
 
         if node_name == "give_output":
             draft = updated_state.get("current_draft", "")

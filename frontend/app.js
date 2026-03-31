@@ -21,12 +21,49 @@
   let currentThinkingBubble = null;
   let upstageApiKey = "";
 
+  // ── Step timer ─────────────────────────────────────────────────────────────
+
+  let processingTimer = null;
+  let stepStartTime = null;
+  let currentNodeLabel = "";
+  let currentRevision = 0;
+  let currentMaxRevisions = 3;
+
+  function startStepTimer(label, revision, maxRevisions) {
+    currentNodeLabel = label;
+    currentRevision = revision || 0;
+    currentMaxRevisions = maxRevisions || 3;
+    stepStartTime = Date.now();
+    updateThinkingText();
+    if (processingTimer) clearInterval(processingTimer);
+    processingTimer = setInterval(updateThinkingText, 1000);
+  }
+
+  function stopStepTimer() {
+    if (processingTimer) {
+      clearInterval(processingTimer);
+      processingTimer = null;
+    }
+  }
+
+  function updateThinkingText() {
+    if (!currentThinkingBubble) return;
+    const textEl = currentThinkingBubble.querySelector(".thinking-text");
+    if (!textEl) return;
+    const elapsed = stepStartTime ? Math.floor((Date.now() - stepStartTime) / 1000) : 0;
+    const parts = [currentNodeLabel];
+    if (currentRevision > 0) parts.push(`개선 ${currentRevision}/${currentMaxRevisions}`);
+    parts.push(`${elapsed}s`);
+    textEl.textContent = parts.join("  ·  ");
+  }
+
   // ── Node progress helpers ──────────────────────────────────────────────────
 
   const nodeSteps = document.querySelectorAll(".node-step");
 
   const nodeLabelMap = {
     analyze_input:  "분석 중",
+    ask_user:       "정보 요청 중",
     write_draft:    "초안 작성 중",
     evaluate:       "평가 중",
     agent_feedback: "피드백 중",
@@ -38,15 +75,16 @@
     if (stepLabelMobile) stepLabelMobile.textContent = "";
   }
 
-  function setNodeActive(name) {
+  function setNodeActive(name, revision, maxRevisions) {
     nodeSteps.forEach(el => {
       if (el.dataset.node === name) {
         el.classList.add("active");
         el.classList.remove("done");
         if (stepLabelMobile) stepLabelMobile.textContent = nodeLabelMap[name] || name;
-        showThinkingIndicator();
       }
     });
+    showThinkingIndicator();
+    startStepTimer(nodeLabelMap[name] || name, revision, maxRevisions);
   }
 
   function setNodeDone(name) {
@@ -103,7 +141,7 @@
 
     const bub = document.createElement("div");
     bub.className = "thinking-text";
-    bub.textContent = "···";
+    bub.textContent = currentNodeLabel || "···";
     wrap.appendChild(bub);
 
     messagesEl.appendChild(wrap);
@@ -251,7 +289,7 @@
   function handleServerMessage(msg) {
     switch (msg.type) {
       case "node_start":
-        setNodeActive(msg.node);
+        setNodeActive(msg.node, msg.revision, msg.max_revisions);
         break;
 
       case "node_end":
@@ -300,6 +338,7 @@
     isProcessing = processing;
     sendBtn.disabled = processing;
     sendBtn.classList.toggle("processing", processing);
+    if (!processing) stopStepTimer();
   }
 
   // ── Send message ───────────────────────────────────────────────────────────
@@ -313,6 +352,10 @@
     inputEl.value = "";
     inputEl.style.height = "auto";
     setProcessing(true);
+    currentRevision = 0;
+    currentNodeLabel = "준비 중";
+    showThinkingIndicator();
+    startStepTimer("준비 중");
 
     ws.send(JSON.stringify({ type: "user_message", content: text }));
   }

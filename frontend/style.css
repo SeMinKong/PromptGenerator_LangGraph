@@ -320,15 +320,32 @@ header {
 
 /* ── Thinking indicator ── */
 .thinking-text {
-  font-size: 18px;
-  color: var(--text-tertiary);
-  letter-spacing: 0.1em;
-  animation: thinking-fade 1.2s ease-in-out infinite;
-  padding-left: 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-family: var(--font-sans);
+  color: var(--text-secondary);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 5px 12px;
+  letter-spacing: 0.01em;
+  animation: thinking-fade 2s ease-in-out infinite;
+}
+
+.thinking-text::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+  animation: dot-pulse 1.4s ease-in-out infinite;
 }
 
 @keyframes thinking-fade {
-  0%, 100% { opacity: 0.3; }
+  0%, 100% { opacity: 0.7; }
   50%       { opacity: 1; }
 }
 
