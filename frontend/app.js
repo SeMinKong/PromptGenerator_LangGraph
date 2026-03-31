@@ -66,7 +66,6 @@
     ask_user:       "정보 요청 중",
     write_draft:    "초안 작성 중",
     evaluate:       "평가 중",
-    agent_feedback: "피드백 중",
     give_output:    "완성 중",
   };
 

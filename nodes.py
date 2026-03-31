@@ -15,7 +15,6 @@ def _get_llm(api_key: str) -> ChatUpstage:
     return ChatUpstage(
         api_key=api_key or _FALLBACK_API_KEY,
         model="solar-pro",
-        reasoning_effort="high",
     )
 
 
@@ -132,9 +131,10 @@ def evaluate(state: PromptState) -> PromptState:
         "and assess whether it fully meets all 6 required sections:\n"
         "역할, 배경 정보, 수행 과제, 제약 사항, 세부 지시, 출력 형식\n\n"
         "Respond ONLY with a valid JSON object in this format:\n"
-        '{"quality": "good" or "needs_improvement", "reason": "brief explanation"}\n\n'
+        '{"quality": "good" or "needs_improvement", "reason": "brief explanation", "feedback": "detailed feedback for improvement"}\n\n'
         "Use \"good\" only if ALL sections are present, detailed, and coherent.\n"
-        "Use \"needs_improvement\" if any section is missing, too vague, or incomplete."
+        "Use \"needs_improvement\" if any section is missing, too vague, or incomplete.\n"
+        "If needs_improvement, provide specific, actionable feedback in the 'feedback' field."
     ))
 
     draft_message = HumanMessage(content=f"Draft to evaluate:\n\n{draft}")
@@ -145,38 +145,28 @@ def evaluate(state: PromptState) -> PromptState:
         parsed = _parse_json_response(content)
         quality = parsed.get("quality", "needs_improvement")
         reason = parsed.get("reason", "")
+        feedback = parsed.get("feedback", "")
     except Exception:
         quality = "good"
         reason = "Evaluation parsing failed, accepting draft."
+        feedback = ""
 
+    new_messages = []
     eval_message = AIMessage(content=f"[평가] 품질: {quality} — {reason}")
+    new_messages.append(eval_message)
+
+    revision_inc = 0
+    if quality == "needs_improvement":
+        if feedback:
+            feedback_message = AIMessage(content=f"[피드백]\n{feedback}")
+            new_messages.append(feedback_message)
+        revision_inc = 1
+
     return {
         **state,
-        "messages": [eval_message],
+        "messages": new_messages,
         "current_draft": state.get("current_draft", "") + f"\n\n<!-- eval:{quality} -->",
-    }
-
-
-def agent_feedback(state: PromptState) -> PromptState:
-    """Generate specific feedback to improve the current draft."""
-    draft = state.get("current_draft", "")
-
-    system_prompt = SystemMessage(content=(
-        "You are an expert prompt engineer providing revision feedback. "
-        "The draft below needs improvement. Give specific, actionable feedback "
-        "on exactly what to fix in each section. Be concise and direct.\n"
-        "Focus on: missing content, vague instructions, and structural issues."
-    ))
-
-    draft_message = HumanMessage(content=f"Draft to improve:\n\n{draft}")
-    response = _get_llm(state.get("api_key", "")).invoke([system_prompt, draft_message])
-    feedback = _clean_str(response.content.strip())
-
-    feedback_message = AIMessage(content=f"[피드백]\n{feedback}")
-    return {
-        **state,
-        "messages": [feedback_message],
-        "revision_count": state.get("revision_count", 0) + 1,
+        "revision_count": state.get("revision_count", 0) + revision_inc,
     }
 
 
@@ -184,7 +174,7 @@ def give_output(state: PromptState) -> PromptState:
     """Return the final polished prompt to the user."""
     draft = state.get("current_draft", "")
     # Strip internal evaluation markers
-    final = draft.replace("", "").replace("", "").strip()
+    final = draft.replace("<!-- eval:good -->", "").replace("<!-- eval:needs_improvement -->", "").strip()
 
     separator = "=" * 60
     final_output = (

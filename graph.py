@@ -6,7 +6,6 @@ from nodes import (
     ask_user,
     write_draft,
     evaluate,
-    agent_feedback,
     give_output,
 )
 
@@ -22,12 +21,12 @@ MAX_REVISIONS = 3
 
 
 def quality_check(state: PromptState) -> str:
-    """Route after evaluate: needs improvement → agent_feedback, good → give_output."""
+    """Route after evaluate: needs improvement → write_draft, good → give_output."""
     if state.get("revision_count", 0) >= MAX_REVISIONS:
         return "give_output"
     draft = state.get("current_draft", "")
     if "<!-- eval:needs_improvement -->" in draft:
-        return "agent_feedback"
+        return "write_draft"
     return "give_output"
 
 
@@ -39,7 +38,6 @@ def build_graph() -> StateGraph:
     builder.add_node("ask_user", ask_user)
     builder.add_node("write_draft", write_draft)
     builder.add_node("evaluate", evaluate)
-    builder.add_node("agent_feedback", agent_feedback)
     builder.add_node("give_output", give_output)
 
     # Entry point
@@ -66,13 +64,10 @@ def build_graph() -> StateGraph:
         "evaluate",
         quality_check,
         {
-            "agent_feedback": "agent_feedback",
+            "write_draft": "write_draft",
             "give_output": "give_output",
         },
     )
-
-    # agent_feedback → write_draft (revision loop)
-    builder.add_edge("agent_feedback", "write_draft")
 
     # give_output → END
     builder.add_edge("give_output", END)
