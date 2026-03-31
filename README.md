@@ -2,6 +2,8 @@
 
 A web-based prompt generator powered by **LangGraph** and **Upstage Solar**. Input a rough idea and the AI produces a structured, high-quality 6-section prompt through an automated analysis → draft → evaluate → feedback loop.
 
+**Live Demo**: https://promptgeneratorlanggraph-production.up.railway.app
+
 ![UI Preview](graph.png)
 
 ## Features
@@ -53,7 +55,17 @@ analyze_input  →  write_draft  →  evaluate
 | Frontend | Vanilla HTML / CSS / JS |
 | Deployment | Docker + Railway |
 
-## Getting Started
+## How to Use
+
+1. **접속** — [https://promptgeneratorlanggraph-production.up.railway.app](https://promptgeneratorlanggraph-production.up.railway.app) 에 접속합니다. (로컬 실행 시 `http://localhost:8000`)
+2. **API Key 입력** — 팝업 모달에 본인의 [Upstage API Key](https://console.upstage.ai)를 입력하고 **Confirm** 을 누릅니다.
+3. **아이디어 입력** — 왼쪽 채팅창에 만들고 싶은 프롬프트의 아이디어를 자유롭게 입력합니다.
+4. **진행 상황 확인** — AI가 분석 → 초안 작성 → 평가 → 피드백 단계를 거치는 동안 실시간 진행 표시기가 나타납니다.
+5. **결과 확인 및 복사** — 오른쪽 패널에 완성된 6섹션 구조 프롬프트가 표시됩니다. **Copy** 버튼으로 클립보드에 복사하세요.
+
+> API Key는 브라우저 세션에만 유지되며 서버에 저장되지 않습니다.
+
+## Developer Guide
 
 ### Prerequisites
 
@@ -61,13 +73,17 @@ analyze_input  →  write_draft  →  evaluate
 - [uv](https://docs.astral.sh/uv/) (recommended) or pip
 - Upstage API key — get one at [console.upstage.ai](https://console.upstage.ai)
 
-### How to run
+### Local Setup
 
 ```bash
+# Clone the repository
+git clone https://github.com/SeMinKong/langgraph.git
+cd langgraph
+
 # Install dependencies
 uv pip install -r requirements.txt
 
-# Run
+# Run the development server
 uv run uvicorn server.app:app --reload
 ```
 
@@ -75,13 +91,13 @@ Open `http://localhost:8000`, enter your Upstage API key, and start generating p
 
 ### Environment Variable (optional)
 
-If you want to skip the API key modal during local dev, create a `.env` file:
+To skip the API key modal during local dev, create a `.env` file:
 
 ```
 UPSTAGE_API_KEY=your_key_here
 ```
 
-## Deployment on Railway
+### Deployment on Railway
 
 1. Push this repo to GitHub
 2. Go to [railway.app](https://railway.app) → **New Project** → **Deploy from GitHub repo**
