@@ -8,3 +8,4 @@ class PromptState(TypedDict):
     missing_info: list[str]                   # List of missing information items
     current_draft: str                        # Current 6-section prompt draft
     api_key: str                              # Per-session Upstage API key
+    revision_count: int                       # Number of revision loops completed

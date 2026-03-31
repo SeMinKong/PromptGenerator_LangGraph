@@ -18,8 +18,13 @@ def missing_info_check(state: PromptState) -> str:
     return "write_draft"
 
 
+MAX_REVISIONS = 3
+
+
 def quality_check(state: PromptState) -> str:
     """Route after evaluate: needs improvement → agent_feedback, good → give_output."""
+    if state.get("revision_count", 0) >= MAX_REVISIONS:
+        return "give_output"
     draft = state.get("current_draft", "")
     if "<!-- eval:needs_improvement -->" in draft:
         return "agent_feedback"

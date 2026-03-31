@@ -176,6 +176,7 @@ def agent_feedback(state: PromptState) -> PromptState:
     return {
         **state,
         "messages": [feedback_message],
+        "revision_count": state.get("revision_count", 0) + 1,
     }
 
 
