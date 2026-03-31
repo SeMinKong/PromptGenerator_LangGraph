@@ -2,7 +2,7 @@
 
 A web-based prompt generator powered by **LangGraph** and **Upstage Solar**. Input a rough idea and the AI produces a structured, high-quality 6-section prompt through an automated analysis → draft → evaluate → feedback loop.
 
-**Live Demo**: https://promptgeneratorlanggraph-production.up.railway.app
+**Live Demo**: https://promptgeneratorlanggraph-production.up.railway.app **Deploy Cancelled**
 
 ![UI Preview](graph.png)
 
