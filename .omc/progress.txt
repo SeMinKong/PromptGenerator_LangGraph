@@ -1,0 +1,23 @@
+# Ralph Progress Log
+## Project: LangGraph Universal Prompt Generator Agent
+## Started: 2026-03-30
+
+### Iteration 1 — COMPLETED
+All 4 user stories passed.
+
+#### Files created:
+- state.py: PromptState TypedDict with messages (Annotated[list, add_messages]), missing_info (list[str]), current_draft (str)
+- nodes.py: 6 node functions using ChatOllama(model="llama3.2"). LLM used in analyze_input, write_draft, evaluate, agent_feedback. ask_user and give_output are deterministic.
+- graph.py: StateGraph with is_sufficient and quality_check conditional edges. Loops: ask_user→analyze_input, agent_feedback→write_draft.
+- main.py: while True terminal loop, app.invoke per user message, state reset after give_output.
+
+#### Key patterns:
+- evaluate() embeds <!-- eval:good/needs_improvement --> markers in current_draft for routing
+- give_output() strips these markers before final output
+- State is immutable-style: nodes return {**state, ...} with updated fields
+- OLLAMA_MODEL constant at top of nodes.py for easy model switching
+
+#### Learnings:
+- LangGraph add_messages reducer used to avoid duplicate message appending
+- JSON response parsing from Ollama needs markdown code block stripping
+- State reset after give_output gives clean multi-session UX in terminal

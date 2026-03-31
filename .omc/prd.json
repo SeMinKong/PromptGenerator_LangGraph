@@ -1,0 +1,18 @@
+{
+  "project": "Progress bar real-time fix",
+  "description": "graph_runner.py emits node events incrementally via Queue so progress bar lights up in real-time",
+  "stories": [
+    {
+      "id": "US-001",
+      "title": "graph_runner.py — Real-time node event streaming via Queue",
+      "passes": true,
+      "acceptanceCriteria": [
+        "asyncio.Queue used to emit events incrementally ✅",
+        "threading.Thread runs app.stream() in background ✅",
+        "node_start/node_end sent per node as it completes (not buffered) ✅",
+        "run_graph returns final updated state ✅",
+        "py_compile passes ✅"
+      ]
+    }
+  ]
+}

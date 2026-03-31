@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>범용 프롬프트 생성기</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+  <header>
+    <div class="header-left">
+      <h1>범용 프롬프트 생성기</h1>
+    </div>
+
+    <nav class="header-progress" aria-label="생성 단계">
+      <div class="progress-track">
+        <div class="node-step" data-node="analyze_input" title="분석">
+          <span class="dot"></span>
+        </div>
+        <div class="node-step" data-node="write_draft" title="초안 작성">
+          <span class="dot"></span>
+        </div>
+        <div class="node-step" data-node="evaluate" title="평가">
+          <span class="dot"></span>
+        </div>
+        <div class="node-step" data-node="agent_feedback" title="피드백">
+          <span class="dot"></span>
+        </div>
+        <div class="node-step" data-node="give_output" title="완성">
+          <span class="dot"></span>
+        </div>
+      </div>
+      <span class="step-label-mobile" id="step-label-mobile"></span>
+    </nav>
+
+    <div class="header-right">
+      <div class="ws-pill">
+        <span class="ws-status ws-connecting" id="ws-status" aria-label="연결 상태"></span>
+        <span class="ws-text" id="ws-text">연결 중</span>
+      </div>
+      <button id="btn-new-session">새 세션</button>
+    </div>
+  </header>
+
+  <main id="split-layout">
+
+    <section id="left-panel" aria-label="대화">
+      <div id="chat-container">
+        <div id="messages">
+          <div class="empty-state" id="empty-state">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+              <path d="M16 3l2 5.5 5.5.8-4 3.9 1 5.6L16 16l-4.5 2.8 1-5.6-4-3.9 5.5-.8z" fill="currentColor" opacity="0.4"/>
+            </svg>
+            <p class="empty-heading">어떤 프롬프트를 만들까요?</p>
+            <p class="empty-sub">아래에 설명을 입력하세요</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="input-area">
+        <div class="textarea-wrap">
+          <textarea id="user-input" placeholder="원하시는 프롬프트를 설명해 주세요..." rows="1" aria-label="메시지 입력"></textarea>
+        </div>
+        <button id="btn-send" aria-label="전송">
+          <svg class="btn-send-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M8 13V3M3 8l5-5 5 5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <svg class="btn-send-spinner" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="25 13" />
+          </svg>
+        </button>
+      </div>
+    </section>
+
+    <div id="panel-divider" aria-hidden="true"></div>
+
+    <section id="right-panel" aria-label="생성된 프롬프트">
+      <div id="output-panel">
+        <div class="output-empty" id="output-empty">
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none" aria-hidden="true">
+            <rect x="6" y="8" width="24" height="3" rx="1.5" fill="currentColor" opacity="0.25"/>
+            <rect x="6" y="15" width="20" height="3" rx="1.5" fill="currentColor" opacity="0.18"/>
+            <rect x="6" y="22" width="16" height="3" rx="1.5" fill="currentColor" opacity="0.12"/>
+          </svg>
+          <p>완성된 프롬프트가<br>여기에 표시됩니다</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- API Key Modal -->
+  <div id="key-modal">
+    <div class="key-modal-box">
+      <h2>Upstage API Key</h2>
+      <p>본인의 Upstage API 키를 입력하세요.<br>키는 서버에 저장되지 않습니다.</p>
+      <input type="password" id="key-input" placeholder="up_..." autocomplete="off" />
+      <button id="key-submit">시작하기</button>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
