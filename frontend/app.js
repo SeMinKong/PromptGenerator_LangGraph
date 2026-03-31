@@ -13,6 +13,7 @@
   const keyModal      = document.getElementById("key-modal");
   const keyInput      = document.getElementById("key-input");
   const keySubmit     = document.getElementById("key-submit");
+  const keyError      = document.getElementById("key-error");
 
   let ws = null;
   let sessionId = null;
@@ -202,11 +203,15 @@
         body: JSON.stringify({ api_key: upstageApiKey }),
       });
       const data = await res.json();
+      if (!res.ok) {
+        showKeyError(data.error || "API 키 확인에 실패했습니다.");
+        return;
+      }
       sessionId = data.session_id;
+      keyModal.classList.add("hidden");
       connectWebSocket();
     } catch (e) {
-      console.error("Session init failed", e);
-      setWsStatus("disconnected");
+      showKeyError("서버 연결에 실패했습니다. 다시 시도해 주세요.");
     }
   }
 
@@ -342,12 +347,20 @@
 
   // ── API Key Modal ──────────────────────────────────────────────────────────
 
+  function showKeyError(msg) {
+    keyError.textContent = msg;
+    keyError.style.display = "block";
+    keySubmit.disabled = false;
+    keySubmit.textContent = "시작하기";
+  }
+
   function submitKey() {
     const key = keyInput.value.trim();
     if (!key) return;
+    keyError.style.display = "none";
+    keySubmit.disabled = true;
+    keySubmit.textContent = "확인 중…";
     upstageApiKey = key;
-    keyModal.classList.add("hidden");
-    setInputEnabled(false);
     initSession();
   }
 
