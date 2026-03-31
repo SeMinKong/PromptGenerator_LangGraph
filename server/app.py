@@ -22,6 +22,11 @@ async def index():
     return FileResponse(str(FRONTEND_DIR / "index.html"))
 
 
+@app.api_route("/health", methods=["GET", "HEAD"])
+async def health():
+    return {"status": "ok"}
+
+
 class SessionRequest(BaseModel):
     api_key: str = ""
 
