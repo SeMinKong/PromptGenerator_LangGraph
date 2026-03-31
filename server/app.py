@@ -1,11 +1,14 @@
+import asyncio
+import os
 from pathlib import Path
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from langchain_core.messages import HumanMessage
+from langchain_upstage import ChatUpstage
 
 from server.session import store
 from server.graph_runner import run_graph
@@ -17,22 +20,34 @@ app = FastAPI(title="Prompt Generator")
 app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
 
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 async def index():
     return FileResponse(str(FRONTEND_DIR / "index.html"))
-
-
-@app.api_route("/health", methods=["GET", "HEAD"])
-async def health():
-    return {"status": "ok"}
 
 
 class SessionRequest(BaseModel):
     api_key: str = ""
 
 
+def _check_api_key(api_key: str) -> bool:
+    """Make a minimal call to verify the Upstage API key is valid."""
+    try:
+        llm = ChatUpstage(api_key=api_key, model="solar-pro")
+        llm.invoke([HumanMessage(content="hi")])
+        return True
+    except Exception:
+        return False
+
+
 @app.post("/api/session")
 async def create_session(body: SessionRequest = SessionRequest()):
+    key_to_use = body.api_key or os.getenv("UPSTAGE_API_KEY", "")
+    if not key_to_use:
+        return JSONResponse(status_code=400, content={"error": "API 키가 필요합니다."})
+
+    if not await asyncio.to_thread(_check_api_key, key_to_use):
+        return JSONResponse(status_code=401, content={"error": "유효하지 않은 API 키입니다."})
+
     session_id = await store.create_session(api_key=body.api_key)
     return {"session_id": session_id}
 
