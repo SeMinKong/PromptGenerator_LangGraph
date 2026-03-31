@@ -153,7 +153,7 @@ def evaluate(state: PromptState) -> PromptState:
     return {
         **state,
         "messages": [eval_message],
-        "current_draft": state.get("current_draft", "") + f"\n\n",
+        "current_draft": state.get("current_draft", "") + f"\n\n<!-- eval:{quality} -->",
     }
 
 
