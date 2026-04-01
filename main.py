@@ -1,7 +1,18 @@
+import logging
+import sys
+import traceback
+
 from langchain_core.messages import HumanMessage
 
 from graph import app
 from state import PromptState
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s — %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)],
+)
+logger = logging.getLogger(__name__)
 
 
 def run() -> None:
@@ -46,15 +57,13 @@ def run() -> None:
         # Run the graph
         try:
             result = app.invoke(state)
-        except Exception as e:
-            import traceback
-            try:
-                print(f"\n[오류] 처리 중 문제가 발생했습니다: {e}\n")
-                traceback.print_exc()
-            except UnicodeEncodeError:
-                print(f"\n[오류] 처리 중 문제가 발생했습니다 (인코딩 우회): {repr(e)}\n")
-                print("Traceback (encoded):")
-                print(traceback.format_exc().encode('utf-8', 'replace').decode('utf-8'))
+        except Exception as exc:
+            logger.error(
+                "그래프 실행 중 오류가 발생했습니다: %s",
+                exc,
+                exc_info=True,
+            )
+            print(f"\n[오류] 처리 중 문제가 발생했습니다: {exc}\n")
             continue
 
         # Update state with graph result

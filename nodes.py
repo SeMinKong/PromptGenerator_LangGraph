@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from dotenv import load_dotenv
 from langchain_upstage import ChatUpstage
@@ -6,12 +7,15 @@ from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 
 from state import PromptState
 
+logger = logging.getLogger(__name__)
+
 # 환경 변수 로드 (fallback only)
 load_dotenv()
 _FALLBACK_API_KEY = os.getenv("UPSTAGE_API_KEY", "")
 
 
 def _get_llm(api_key: str) -> ChatUpstage:
+    """Instantiate the LLM client using the provided key or the fallback env key."""
     return ChatUpstage(
         api_key=api_key or _FALLBACK_API_KEY,
         model="solar-pro",
@@ -19,7 +23,11 @@ def _get_llm(api_key: str) -> ChatUpstage:
 
 
 def _parse_json_response(content: str) -> dict:
-    """Strip optional markdown fences and parse JSON from an LLM response."""
+    """Strip optional markdown fences and parse JSON from an LLM response.
+
+    Returns an empty dict if parsing fails; callers should check for
+    expected keys and handle missing values explicitly.
+    """
     content = content.strip()
     if content.startswith("```"):
         content = "\n".join(
@@ -28,17 +36,23 @@ def _parse_json_response(content: str) -> dict:
         ).strip()
     try:
         return json.loads(content)
-    except json.JSONDecodeError:
+    except json.JSONDecodeError as exc:
+        logger.debug("JSON parse failed: %s | raw content: %.200s", exc, content)
         return {}
 
 
 def _clean_str(s: str) -> str:
     """Ensure the string can be encoded to UTF-8 without surrogate errors."""
-    return s.encode('utf-8', 'ignore').decode('utf-8')
+    return s.encode("utf-8", "ignore").decode("utf-8")
 
 
 def analyze_input(state: PromptState) -> PromptState:
-    """Analyze the latest user message and update missing_info."""
+    """Analyze the latest user message and update missing_info.
+
+    Calls the LLM with a system prompt that enumerates the 6 required
+    prompt sections, then parses the JSON response to extract which
+    sections are still missing from the conversation.
+    """
     conversation = state.get("messages", [])
     if not conversation:
         return state
@@ -63,12 +77,22 @@ def analyze_input(state: PromptState) -> PromptState:
     response = _get_llm(state.get("api_key", "")).invoke(messages_to_send)
 
     content = _clean_str(response.content)
-    missing = _parse_json_response(content).get("missing", [])
+    parsed = _parse_json_response(content)
+    if not parsed:
+        logger.warning(
+            "analyze_input: failed to parse LLM response as JSON; "
+            "treating all sections as missing. Raw: %.200s", content
+        )
+    missing = parsed.get("missing", [])
     return {**state, "missing_info": missing}
 
 
 def ask_user(state: PromptState) -> PromptState:
-    """Generate a question asking the user for missing information."""
+    """Generate a question asking the user for missing information.
+
+    Formats the list of missing sections into a Korean-language question
+    and appends it as an AIMessage.
+    """
     missing = state.get("missing_info", [])
 
     if not missing:
@@ -89,7 +113,11 @@ def ask_user(state: PromptState) -> PromptState:
 
 
 def write_draft(state: PromptState) -> PromptState:
-    """Generate a structured 6-section prompt draft from collected information."""
+    """Generate a structured 6-section prompt draft from collected information.
+
+    Sends the full conversation to the LLM with a strict template that
+    requires all six Korean-headed sections to be present and filled in.
+    """
     conversation = state.get("messages", [])
 
     system_prompt = SystemMessage(content=(
@@ -123,7 +151,14 @@ def write_draft(state: PromptState) -> PromptState:
 
 
 def evaluate(state: PromptState) -> PromptState:
-    """Evaluate the quality of the current draft and determine if it needs revision."""
+    """Evaluate the quality of the current draft and determine if it needs revision.
+
+    Sends the draft to the LLM for structured quality assessment.  The
+    response must be a JSON object with ``quality``, ``reason``, and
+    ``feedback`` keys.  If parsing fails a ``ValueError`` is raised so
+    the caller (LangGraph) surfaces the failure rather than silently
+    accepting a broken draft.
+    """
     draft = state.get("current_draft", "")
 
     system_prompt = SystemMessage(content=(
@@ -141,17 +176,32 @@ def evaluate(state: PromptState) -> PromptState:
     response = _get_llm(state.get("api_key", "")).invoke([system_prompt, draft_message])
 
     content = _clean_str(response.content)
-    try:
-        parsed = _parse_json_response(content)
-        quality = parsed.get("quality", "needs_improvement")
-        reason = parsed.get("reason", "")
-        feedback = parsed.get("feedback", "")
-    except Exception:
-        quality = "good"
-        reason = "Evaluation parsing failed, accepting draft."
-        feedback = ""
+    parsed = _parse_json_response(content)
 
-    new_messages = []
+    if not parsed:
+        logger.warning(
+            "evaluate: LLM response could not be parsed as JSON. "
+            "Raising ValueError to surface the failure. Raw: %.300s", content
+        )
+        raise ValueError(
+            f"evaluate node: failed to parse LLM quality-evaluation response. "
+            f"Raw response (first 300 chars): {content[:300]}"
+        )
+
+    quality = parsed.get("quality", "needs_improvement")
+    reason = parsed.get("reason", "")
+    feedback = parsed.get("feedback", "")
+
+    if quality not in ("good", "needs_improvement"):
+        logger.warning(
+            "evaluate: unexpected quality value %r; defaulting to 'needs_improvement'",
+            quality,
+        )
+        quality = "needs_improvement"
+
+    logger.info("evaluate: quality=%s reason=%s", quality, reason)
+
+    new_messages: list = []
     eval_message = AIMessage(content=f"[평가] 품질: {quality} — {reason}")
     new_messages.append(eval_message)
 
@@ -171,7 +221,11 @@ def evaluate(state: PromptState) -> PromptState:
 
 
 def give_output(state: PromptState) -> PromptState:
-    """Return the final polished prompt to the user."""
+    """Return the final polished prompt to the user.
+
+    Strips all internal evaluation marker comments from ``current_draft``
+    and formats the result as a clearly delimited final output message.
+    """
     draft = state.get("current_draft", "")
     # Strip internal evaluation markers
     final = draft.replace("<!-- eval:good -->", "").replace("<!-- eval:needs_improvement -->", "").strip()
@@ -179,12 +233,13 @@ def give_output(state: PromptState) -> PromptState:
     separator = "=" * 60
     final_output = (
         f"\n{separator}\n"
-        f"✅ 최종 프롬프트가 완성되었습니다!\n"
+        f"최종 프롬프트가 완성되었습니다!\n"
         f"{separator}\n\n"
         f"{final}\n\n"
         f"{separator}\n"
     )
 
+    logger.info("give_output: delivering final prompt (%d chars)", len(final))
     output_message = AIMessage(content=final_output)
     return {
         **state,
