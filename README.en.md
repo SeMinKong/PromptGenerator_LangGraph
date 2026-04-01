@@ -1,10 +1,10 @@
-# Universal Prompt Generator (LangGraph) 🤖
+# Universal Prompt Generator (LangGraph)
 
 **[한국어 버전](./README.md)**
 
 A LangGraph-powered automated agent that transforms rough ideas into high-quality, structured prompts. Through a systematic **Analyze → Ask → Draft → Evaluate → Output** pipeline, it ensures every prompt follows a professional 6-section structure for optimal LLM performance.
 
-## 🚀 Key Features
+## Key Features
 
 - **5-Stage Automation Pipeline**: A structured workflow (Analyze, Ask, Draft, Evaluate, Output) to guarantee consistent prompt quality.
 - **6-Section Standardized Structure**: Generates prompts with dedicated sections for Role, Background, Task, Constraints, Instructions, and Format.
@@ -12,7 +12,7 @@ A LangGraph-powered automated agent that transforms rough ideas into high-qualit
 - **Dual Mode Interface**: Supports both a fast **CLI mode** for power users and a **Web UI** for a more visual experience.
 - **Real-time Streaming**: Powered by **FastAPI** and **WebSockets** to show the agent's progress and reasoning live.
 
-## 🛠 Tech Stack
+## Tech Stack
 
 - **AI Framework**: LangGraph, LangChain
 - **LLM**: Upstage Solar Pro
@@ -20,7 +20,7 @@ A LangGraph-powered automated agent that transforms rough ideas into high-qualit
 - **Frontend**: Vanilla JS, CSS3
 - **Deployment**: Docker
 
-## 🏗 Project Structure
+## Project Structure
 
 ```text
 ├── main.py            # CLI entry point
@@ -30,7 +30,7 @@ A LangGraph-powered automated agent that transforms rough ideas into high-qualit
 └── frontend/          # Responsive web interface
 ```
 
-## 🧠 Technical Highlights
+## Technical Highlights
 
 ### 1. Multi-Node State Management
 I designed a state-based graph where each node (Analyze, Draft, etc.) performs a specific transformation on the `PromptState`. This modular approach makes it easy to debug and expand the pipeline's capabilities.
@@ -38,7 +38,7 @@ I designed a state-based graph where each node (Analyze, Draft, etc.) performs a
 ### 2. Automatic Quality Evaluation
 The agent doesn't just write a prompt; it critiques it. The `evaluate` node checks the draft against predefined quality standards and can trigger a re-write (up to 3 times) if the prompt is vague or incomplete.
 
-## 🏁 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Python 3.9+
@@ -60,8 +60,8 @@ pip install -r requirements.txt
 python main.py
 ```
 
-> 💡 **Need more details?**
+>  **Need more details?**
 > For internal Node functions, TypedDict state structures, and Evaluation logic, please refer to the [Detailed Manual (DETAILS.en.md)](./DETAILS.en.md).
 
 ---
-Built with ❤️ using LangGraph & Upstage Solar.
+Built with  using LangGraph & Upstage Solar.
