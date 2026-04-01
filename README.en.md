@@ -60,5 +60,8 @@ pip install -r requirements.txt
 python main.py
 ```
 
+> 💡 **Need more details?**
+> For internal Node functions, TypedDict state structures, and Evaluation logic, please refer to the [Detailed Manual (DETAILS.en.md)](./DETAILS.en.md).
+
 ---
 Built with ❤️ using LangGraph & Upstage Solar.

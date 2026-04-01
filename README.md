@@ -60,5 +60,8 @@ pip install -r requirements.txt
 python main.py
 ```
 
+> 💡 **더 자세한 정보가 필요하신가요?**
+> 상세한 노드별(Node) 동작 로직 및 품질 평가(Evaluation) 루프의 구체적인 명세는 [상세 매뉴얼(DETAILS.md)](./DETAILS.md)에서 확인하실 수 있습니다.
+
 ---
 LangGraph & Upstage Solar Pro로 구축한 프로젝트입니다.
