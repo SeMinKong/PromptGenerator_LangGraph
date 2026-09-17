@@ -2,15 +2,15 @@
 
 **[한국어 버전](./README.md)**
 
-A LangGraph-powered automated agent that transforms rough ideas into high-quality, structured prompts. Through a systematic **Analyze → Ask → Draft → Evaluate → Output** pipeline, it ensures every prompt follows a professional 6-section structure for optimal LLM performance.
+I built this tool to turn a rough idea into a structured prompt. LangGraph connects the **Analyze → Ask → Draft → Evaluate → Output** stages, and Upstage Solar Pro handles each stage.
 
 ## Key Features
 
-- **5-Stage Automation Pipeline**: A structured workflow (Analyze, Ask, Draft, Evaluate, Output) to guarantee consistent prompt quality.
-- **6-Section Standardized Structure**: Generates prompts with dedicated sections for Role, Background, Task, Constraints, Instructions, and Format.
-- **Self-Correction Loop**: Includes an automatic evaluation stage that iterates up to 3 times to refine the prompt draft.
-- **Dual Mode Interface**: Supports both a fast **CLI mode** for power users and a **Web UI** for a more visual experience.
-- **Real-time Streaming**: Powered by **FastAPI** and **WebSockets** to show the agent's progress and reasoning live.
+- **Five stages**: Analyze, Ask, Draft, Evaluate, and Output are separate LangGraph nodes.
+- **Six output sections**: Role, Background, Task, Constraints, Instructions, and Format.
+- **Revision loop**: If evaluation fails, the draft is rewritten up to three times.
+- **Two interfaces**: The project can run through either the CLI or the web UI.
+- **Progress updates**: **FastAPI** and **WebSocket** send the current stage to the browser.
 
 ## Tech Stack
 
@@ -33,10 +33,10 @@ A LangGraph-powered automated agent that transforms rough ideas into high-qualit
 ## Technical Highlights
 
 ### 1. Multi-Node State Management
-I designed a state-based graph where each node (Analyze, Draft, etc.) performs a specific transformation on the `PromptState`. This modular approach makes it easy to debug and expand the pipeline's capabilities.
+Each node reads and updates `PromptState`. The graph moves to the question stage when information is missing and returns to drafting when evaluation fails.
 
 ### 2. Automatic Quality Evaluation
-The agent doesn't just write a prompt; it critiques it. The `evaluate` node checks the draft against predefined quality standards and can trigger a re-write (up to 3 times) if the prompt is vague or incomplete.
+The `evaluate` node checks the draft against predefined criteria. If the draft is vague or incomplete, it returns feedback and sends the state back for another draft, up to three times.
 
 ## Quick Start
 
@@ -60,8 +60,4 @@ pip install -r requirements.txt
 python main.py
 ```
 
->  **Need more details?**
-> For internal Node functions, TypedDict state structures, and Evaluation logic, please refer to the [Detailed Manual (DETAILS.en.md)](./DETAILS.en.md).
-
----
-Built with  using LangGraph & Upstage Solar.
+Node functions, the TypedDict state, and evaluation rules are documented in the [detailed manual](./DETAILS.en.md).
